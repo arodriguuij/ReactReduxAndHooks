@@ -1,29 +1,10 @@
 import React, { Component } from "react";
 import CheckoutSummary from '../../components/Order/CheckoutSummary/CheckoutSummary';
-import { Route } from 'react-router-dom';
+import { Route, Redirect } from 'react-router-dom';
 import ContactData from './ContactData/ContactData';
+import { connect } from 'react-redux';
 
 class Checkout extends Component {
-    state = {
-        ingredients: null,
-        totalPrice: 0
-    }
-
-    componentWillMount() {
-        const query = new URLSearchParams(this.props.location.search);
-        const ingredients = {};
-        let price = 0;
-
-        for (let param of query.entries()) { // ['salad', '1']
-            if (param[0] === 'price') {
-                price = param[1];
-            } else {
-                ingredients[param[0]] = +param[1];
-            }
-        }
-        this.setState({ ingredients: ingredients, totalPrice: price });
-    }
-
     checkoutCancelHandler = () => {
         this.props.history.goBack();
     }
@@ -33,23 +14,37 @@ class Checkout extends Component {
     }
 
     render() {
-        return (
-            <div>
-                <CheckoutSummary
-                    onCheckoutCancel={this.checkoutCancelHandler}
-                    onCheckoutContinue={this.checkoutContinueHandler}
-                    ingredients={this.state.ingredients} />
-                <Route
-                    path={this.props.match.path + '/contact-data'}
-                    //component={ContactData} />  In order to be able to pass props, we are using render
+        let summary = <Redirect to="/" />
+        if (this.props.ings) {
+            const purchasedRedirect = this.props.purchased ? <Redirect to="/" /> : null;
+            summary = (
+                <div>
+                    {purchasedRedirect}
+                    <CheckoutSummary
+                        onCheckoutCancel={this.checkoutCancelHandler}
+                        onCheckoutContinue={this.checkoutContinueHandler}
+                        ingredients={this.props.ings} />
+                    <Route
+                        path={this.props.match.path + '/contact-data'}
+                        component={ContactData} />
+                    {/*                     //In order to be able to pass props, we are using render
                     render={(props) => (
                         <ContactData
-                            ingredients={this.state.ingredients}
-                            price={this.state.totalPrice} {...props}/>
-                    )} />
-            </div>
-        );
+                            ingredients={this.props.ings}
+                            price={this.props.price} {...props}/>
+                    )} /> */}
+                </div>
+            );
+        }
+        return summary;
     }
 }
 
-export default Checkout;
+const mapStateToProps = state => {
+    return {
+        ings: state.burgerBuilderReducer.ingredients,
+        purchased: state.orderReducer.purchased
+    }
+}
+
+export default connect(mapStateToProps)(Checkout);

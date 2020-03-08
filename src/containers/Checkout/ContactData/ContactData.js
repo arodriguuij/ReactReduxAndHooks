@@ -4,6 +4,9 @@ import classes from './ContactData.css';
 import axios from '../../../axios-orders';
 import Spinner from '../../../components/UI/Spinner/Spinner';
 import Input from '../../../components/UI/Input/Input';
+import { connect } from 'react-redux';
+import * as orderActions from '../../../store/actions/index';
+import withErrorHandler from '../../../hoc/withErrorHandler/withErrorHandler'
 
 class ContactData extends Component {
     state = {
@@ -70,7 +73,8 @@ class ContactData extends Component {
                 },
                 value: '',
                 validation: {
-                    required: true
+                    required: true,
+                    isEmail: true
                 },
                 valid: false,
                 touched: false
@@ -85,49 +89,59 @@ class ContactData extends Component {
                 },
                 validation: {},
                 value: 'fastest',
-                valid: true 
+                valid: true
             }
         },
-        loading: false,
         formIsValid: false
     }
 
     orderHandler = async (e) => {
         e.preventDefault();
-        this.setState( { loading: true } );
+
         const formData = {};
         for (let formElement in this.state.orderForm) {
             formData[formElement] = this.state.orderForm[formElement].value;
         }
         const order = {
-            ingredients: this.props.ingredients,
+            ingredients: this.props.ings,
             totalPrice: parseInt(this.props.price, 10).toFixed(2),
             orderData: formData
         }
-        try {
-            const response = await axios.post('/orders.json', order);
-            this.setState({ loading: false })
-            console.log(response);
-            this.props.history.push('/');
-        } catch (error) {
-            this.setState({ loading: false })
-            console.log(error);
-        }
+
+        this.props.onPurchaseBurger(order, this.props.idToken);
     }
 
     checkValidity(value, rules) {
         let isValid = true;
+        if (!rules) {
+            return true;
+        }
+
         if (rules.required) {
             isValid = value.trim() !== '' && isValid;
         }
+
         if (rules.minLength) {
             isValid = value.length >= rules.minLength && isValid
         }
+
         if (rules.maxLength) {
             isValid = value.length <= rules.maxLength && isValid
         }
+
+        if (rules.isEmail) {
+            const pattern = /[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?/;
+            isValid = pattern.test(value) && isValid
+        }
+
+        if (rules.isNumeric) {
+            const pattern = /^\d+$/;
+            isValid = pattern.test(value) && isValid
+        }
+
         return isValid;
     }
+
 
     inputChangeHandler = (e, id) => {
         const updatedOrderForm = {
@@ -177,7 +191,7 @@ class ContactData extends Component {
             </form>
         );
 
-        if (this.state.loading) {
+        if (this.props.loading) {
             form = <Spinner />
         }
 
@@ -190,4 +204,19 @@ class ContactData extends Component {
     }
 }
 
-export default ContactData
+const mapStateToProps = state => {
+    return {
+        ings: state.burgerBuilderReducer.ingredients,
+        price: state.burgerBuilderReducer.totalPrice,
+        loading: state.orderReducer.loading,
+        idToken: state.authReducer.idToken
+    }
+}
+
+const mapDispatchToProps = dispatch => {
+    return {
+        onPurchaseBurger: (order, idToken) => dispatch(orderActions.purchaseBurger(order, idToken))
+    }
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(withErrorHandler(ContactData, axios));
