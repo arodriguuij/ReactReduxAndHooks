@@ -24,8 +24,10 @@ export const authFail = (error) => {
 };
 
 
-export const logOut = () => {
-    debugger;
+export const logout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('expiartionDate');
+    localStorage.removeItem('userId');
     return {
         type: actionTypes.AUTH_LOGOUT
     }
@@ -34,7 +36,7 @@ export const logOut = () => {
 export const checkAuthTimeOut = expirationTime => {
     return dispatch => {
         setTimeout(() => {
-            dispatch(logOut())
+            dispatch(logout())
         }, parseInt(expirationTime, 10) * 1000);
     }
 }
@@ -54,7 +56,13 @@ export const auth = (email, password, isSignup) => {
 
         axios.post(url, authData)
             .then(res => {
-                console.log(res);
+                //console.log(res);
+
+                const expirationTime = new Date(new Date().getTime() + res.data.expiresIn * 1000);
+                localStorage.setItem('token', res.data.idToken);
+                localStorage.setItem('expiartionDate', expirationTime);
+                localStorage.setItem('userId', res.data.localId)
+
                 dispatch(authStartSuccess(res.data.idToken, res.data.localId));
                 dispatch(checkAuthTimeOut(res.data.expiresIn));
             })
@@ -63,3 +71,29 @@ export const auth = (email, password, isSignup) => {
             });
     };
 };
+
+export const setAuthRedirectPath = path => {
+    return {
+        type: actionTypes.SET_AUTH_REDIRECT_PATH,
+        path: path
+    }
+};
+
+export const authCheckState = () => {
+    return dispatch => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            dispatch(logout());
+        } else {
+            const expirationTime = new Date(localStorage.getItem('expiartionDate'));
+            if (expirationTime > new Date()) {
+                const userId = localStorage.getItem('userId');
+                dispatch(authStartSuccess(token, userId));
+                dispatch(checkAuthTimeOut((expirationTime.getTime() - new Date().getTime()) / 1000 ));
+
+            } else {
+                dispatch(logout());
+            }
+        }
+    }
+}

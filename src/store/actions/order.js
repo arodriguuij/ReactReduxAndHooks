@@ -27,10 +27,11 @@ export const getOrdersFromServerStart = () => {
     }
 }
 
-export const getOrdersFromServer = (token) => {
+export const getOrdersFromServer = (token, userId) => {
     return dispatch => {
+        const queryParams = '?auth=' + token + '&orderBy="userId"&equalTo="' + userId + '"';
         dispatch(getOrdersFromServerStart());
-        axios.get('/orders.json?auth=' + token)
+        axios.get('/orders.json' + queryParams)
             .then(res => dispatch(getOrdersFromServerSuccess(res)))
             .catch(err => dispatch(getOrdersFromServerFailed()))
     }
@@ -54,10 +55,10 @@ export const purchaseBurgerFail = (error) => {
 }
 
 // Async
-export const purchaseBurger = (orderData, token) => {
+export const purchaseBurger = (orderData, token, userId) => {
     return dispatch => {
-        dispatch(purchaseBurgerStart())
-        axios.post('/orders.json?auth=' + token, orderData)
+        dispatch(purchaseBurgerStart());
+        axios.post( '/orders.json?auth=' + token, orderData )
             .then(res => dispatch(purchaseBurgerSuccess(res.data.name, orderData)))
             .catch(err => dispatch(purchaseBurgerFail(err)))
     }

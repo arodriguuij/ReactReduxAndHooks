@@ -23,7 +23,7 @@ const burgerController = (props) => (
         <button 
             onClick={props.ordered}
             disabled={props.disabledOrder} 
-            className={classes.OrderButton}>ORDER NOW</button>
+            className={classes.OrderButton}>{props.isAuth ? 'ORDER NOW' : 'Login to order'}</button>
     </div>
 );
 
