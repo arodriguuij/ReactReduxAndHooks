@@ -28,7 +28,7 @@ export const getDataFromServerFailed = () => {
 }
 export const getBurgerFromServer = () => {
     return dispatch => {
-        axios.get('https://reactmyburger3.firebaseio.com/ingredients.json')
+        axios.get('https://reactburgerbuilderreduxhooks.firebaseio.com/ingredients.json')
             .then(res => dispatch(getDataFromServerSuccess(res.data)))
             .catch(err => dispatch(getDataFromServerFailed()))
     };
